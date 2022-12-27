@@ -1,0 +1,44 @@
+
+trigger:
+- master
+
+pool:
+  name: news
+  vmImage: ubuntu-latest
+
+steps:
+- script: echo Hello, world!
+  displayName: 'Run a one-line script'
+
+- script:  sudo apt  update -y
+- script: sudo apt install maven -y
+
+- task: Maven@3
+  inputs:
+    mavenPomFile: 'pom.xml'
+    publishJUnitResults: true
+    testResultsFiles: '**/surefire-reports/TEST-*.xml'
+    javaHomeOption: 'JDKVersion'
+    mavenVersionOption: 'Default'
+    mavenAuthenticateFeed: false
+    effectivePomSkip: false
+    sonarQubeRunAnalysis: false
+  
+- task: CopyFiles@2
+  inputs:
+     SourceFolder: '$(System.DefaultWorkingDirectory)'
+     Contents: '**/*.war'
+     TargetFolder: '$(Build.ArtifactStagingDirectory)'
+- task: PublishBuildArtifacts@1
+  inputs:
+     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+     ArtifactName: 'drop'
+     publishLocation: 'Container'
+- task: AzureRmWebAppDeployment@4
+  inputs:
+    ConnectionType: 'AzureRM'
+    azureSubscription: 'Free Trial(1)(75a2b295-b2c9-403a-b4a9-7fce370cc20e)'
+    appType: 'webAppLinux'
+    WebAppName: 'newsac'
+    packageForLinux: '$(System.DefaultWorkingDirectory)/target/**/*.war'
+    RuntimeStack: 'TOMCAT|8.5-java11'

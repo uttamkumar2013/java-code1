@@ -1,0 +1,24 @@
+
+trigger:
+- master
+
+pool:
+  name: news
+  vmImage: ubuntu-latest
+
+steps:
+- script: echo Hello, world!
+  displayName: 'Run a one-line script'
+
+- bash: sudo apt-get update -y
+- bash: sudo apt-get install docker.io -y
+- bash: sudo usermod -aG docker AzDevOps
+- bash: sudo chmod 666 /var/run/docker.sock
+- bash: sudo systemctl restart docker 
+
+- task: Docker@2
+  inputs:
+    containerRegistry: 'docker'
+    repository: 'nippy/mycustom-image'
+    command: 'buildAndPush'
+    Dockerfile: '**/Dockerfile'
